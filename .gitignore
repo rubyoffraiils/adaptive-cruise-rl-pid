@@ -2,3 +2,9 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
+
+# large binaries — too big to diff, reproducible by rerunning
+*.zip
+*.mp4
+
+analysis*
