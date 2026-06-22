@@ -4,11 +4,9 @@ import numpy as np
 
 from acc_simulator import lead_acceleration_at_time, generate_random_profile
 
+
 class AdaptiveCruiseControlEnv(gym.Env):
-    """
-    Gym environmetn for 1D ACC 
-    (ego car follows lead car, RL agent controls ego acceleration)
-    """
+    """Gym environment for 1D ACC (ego car follows lead car, RL agent controls ego acceleration)."""
 
     def __init__(self, scenario="default"):
         super().__init__()
@@ -19,7 +17,6 @@ class AdaptiveCruiseControlEnv(gym.Env):
         self.dt = 0.1
         self.max_time = 30.0
 
-        #desired following distance
         self.desired_distance = 20.0
 
         #actuator limits (ego accel is clipped btwn braking + acceleration limits)
@@ -117,26 +114,26 @@ class AdaptiveCruiseControlEnv(gym.Env):
 
 
         # REWARD FUNCTION
-
         reward = 0.0
 
-        # tracking: stay close to desired following distance
-        reward -= abs(distance_error)
+        if distance_error < 0:
+            reward -= 3.0 * abs(distance_error)
+        else:
+            reward -= 1.0 * abs(distance_error)
 
-        #safety: being too close is worse than being too far
-        if distance < self.desired_distance:
-            reward -= 2.0 * abs(distance_error)
+        if distance > 40.0:
+            reward -= 0.5 * (distance - 40.0)
 
-        
-        #comfort: avoid sudden acceleration changes (jerk)
+        if distance < 15.0:
+            reward -= 10.0 * (15.0 - distance)
+        if distance < 5.0:
+            reward -= 50.0 * (5.0 - distance)
+
         reward -= 0.05 * abs(jerk)
+        reward -= 0.02 * (accel ** 2)
 
-        # efficiency: avoid using huge acceleration/braking all the time
-        reward -= 0.02 * abs(accel ** 2)
-
-        # collision is super duper bad
         if collision:
-            reward -= 1000.0
+            reward -= 500.0
 
         terminated = bool(collision)
         truncated = bool(self.t >= self.max_time)

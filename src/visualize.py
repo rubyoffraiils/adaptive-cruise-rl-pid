@@ -25,12 +25,8 @@ from acc_simulator import AdaptiveCruiseSimulator
 from acc_env import AdaptiveCruiseControlEnv
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1.  Collect simulation data
-# ─────────────────────────────────────────────────────────────────────────────
-
 def collect_pid_data(scenario="default"):
-    controller = PIDController(kp=4.0, ki=0.00001, kd=7.9995)
+    controller = PIDController(kp=4.0, ki=0.00002, kd=7.9995)
     sim = AdaptiveCruiseSimulator(
         desired_distance=20.0, dt=0.05, total_time=30.0, scenario=scenario
     )

@@ -94,7 +94,7 @@ def save_plots(out_dir, times, ego_speeds, lead_speeds, distances, errors,
 # ── PID runs ─────────────────────────────────────────────────────────────────
 
 def run_pid(scenario):
-    controller = PIDController(kp=4.0, ki=0.00001, kd=7.9995)
+    controller = PIDController(kp=4.0, ki=0.00002, kd=7.9995)
     sim = AdaptiveCruiseSimulator(
         desired_distance=20.0, dt=0.05, total_time=30.0, scenario=scenario
     )

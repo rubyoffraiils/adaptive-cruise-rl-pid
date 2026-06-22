@@ -1,35 +1,36 @@
+"""
+Single-run PPO trainer. Saves the model to rl_runs/run3/.
+For seed sweeps use train_seeds.py; for style variants use train_styles.py.
+"""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_checker import check_env
-
 from acc_env import AdaptiveCruiseControlEnv
 
+OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "rl_runs", "run3")
+os.makedirs(OUT_DIR, exist_ok=True)
 
-# Train on the randomized scenario so the policy learns to react to
-# distance/speed cues rather than memorising a fixed timing sequence.
+# train on randomized so the policy learns to react to distance/speed cues
+# rather than memorising a fixed timing sequence
 env = AdaptiveCruiseControlEnv(scenario="randomized")
-
-# Check that the environment follows Gymnasium rules
 check_env(env, warn=True)
 
-# Create PPO model.
-# n_steps=2048 gives PPO a longer rollout window — important for ACC because
-# the consequences of an action (closing gap, overshooting) unfold over several
-# seconds, not just one step.
 model = PPO(
     "MlpPolicy",
     env,
     verbose=1,
     learning_rate=3e-4,
-    n_steps=2048,
-    batch_size=64,
-    gamma=0.99,
+    n_steps=2048,   # steps per rollout before each gradient update
+    batch_size=128,
+    gamma=0.99,     # discount factor — how much future rewards matter
 )
+model.learn(total_timesteps=1_500_000)
 
-# 500k steps — 5x run 1 — gives the policy enough episodes across enough
-# random profiles to learn a general reactive strategy.
-model.learn(total_timesteps=500_000)
-
-# Save trained model
-model.save("ppo_acc_randomized")
-
-print("Training complete. Model saved as ppo_acc_randomized.")
+out_path = os.path.join(OUT_DIR, "model")
+model.save(out_path)
+print(f"Model saved → {out_path}.zip")

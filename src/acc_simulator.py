@@ -26,20 +26,7 @@ SCENARIO_PROFILES = {
 
 
 def generate_random_profile(total_time=30.0, rng=None):
-    """
-    Sample a random lead-car acceleration profile for one episode.
 
-    The profile is a list of (phase_end_time, acceleration) pairs that
-    lead_acceleration_at_time() can walk through.  Each call to this
-    function produces a different sequence of phases, so the RL agent
-    cannot memorise the timing of any particular manoeuvre.
-
-    Design choices:
-    - 5–8 phases of random duration (2–7 s each)
-    - Acceleration drawn from {-4, -3, -2, -1, 0, 1, 2} m/s²
-      with higher weight on 0 (cruising) so the car isn't always braking
-    - No two consecutive identical accelerations (forces actual transitions)
-    """
     if rng is None:
         rng = np.random.default_rng()
 
@@ -73,13 +60,7 @@ def generate_random_profile(total_time=30.0, rng=None):
 
 
 def lead_acceleration_at_time(t, scenario="default", profile=None):
-    """
-    Return the lead car's acceleration at time t.
 
-    - scenario="default" or "hard": uses the fixed SCENARIO_PROFILES lookup
-    - scenario="randomized": requires a pre-built `profile` list generated
-      by generate_random_profile(); raises if profile is None
-    """
     if scenario == "randomized":
         if profile is None:
             raise ValueError("scenario='randomized' requires a profile argument")
@@ -149,15 +130,6 @@ class AdaptiveCruiseSimulator:
 
         collisions = []
 
-        # Main Simulation Loop
-       # The loop structure is:
-        #   1. measure distance
-        #   2. compute error
-        #   3. PID chooses acceleration
-        #   4. update lead car physics
-        #   5. update ego car physics
-        #   6. save data
-
         for step in range(steps):
             t = step * self.dt
 
@@ -199,7 +171,6 @@ class AdaptiveCruiseSimulator:
             collisions.append(collision)
 
             if collision:
-                print(f"Collision occurred at time {t:.2f} seconds!")
                 break
 
         # return all recorded data
