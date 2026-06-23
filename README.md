@@ -1,6 +1,6 @@
 # RL vs PID for Adaptive Cruise Control
 
-After getting rear-ended, I got curious about how adaptive cruise control actually works, so I built this project :p 🚗💥🚗
+After getting rear-ended, I was curious abt how adaptive cruise control actually works, so I built this project :p 🚗💥🚗
 
 I created a 1D driving simulator and compared a Bayesian-tuned PID controller with a PPO reinforcement learning policy. I also tested different reward functions, random seeds, and three driving styles: aggressive, safe, and smooth.
 
