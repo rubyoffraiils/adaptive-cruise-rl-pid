@@ -1,12 +1,10 @@
-# RL vs PID for Adaptive Cruise Control
+# RL vs PID for Adaptive Cruise Control 🚗💥🚗 
 
-After getting rear-ended, I was curious abt how adaptive cruise control actually works so I made this!!🚗💥🚗
+after getting rear-ended, i was curious abt how adaptive cruise control actually works so i worked on this! i built a 1D driving simulator and compared it to a bayesian-tuned PID controller with a PPO reinforcement learning policy. i also tested different reward functions, random seeds, and 3 driving styles: aggressive, safe, and smooth.
 
-I built a 1D driving simulator and compared a Bayesian-tuned PID controller with a PPO reinforcement learning policy. I also tested different reward functions, random seeds, and 3 driving styles: aggressive, safe, and smooth.
+**final results:** PID achieved **0.927 m** mean tracking error and the best PPO policy achieved **1.024 m**.
 
-**Final results:** PID achieved **0.927 m** mean tracking error and the best PPO policy achieved **1.024 m**.
-
-📄 **[Read my full report here!!!](RL_vs_PID_for_Adaptive_Cruise_Control.pdf)**
+📄 **[read my full report here!!!](RL_vs_PID_for_Adaptive_Cruise_Control.pdf)**
 
 ## Video Demos
 - [PID Demo](final/videos/demo_PID.mp4)
