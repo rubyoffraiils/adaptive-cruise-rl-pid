@@ -26,7 +26,7 @@
 }
 
 \title{RL vs PID for Adaptive Cruise Control\\
-\large Reward Design, Driving Styles, and Seed Stability}
+\large with different driving styles}
 \author{Ruby Zhou}
 \date{}
 
@@ -162,125 +162,6 @@ I scripted an acceleration profile for the lead car to follow for a 30 second ep
 \end{minipage}
 
 \caption{Default and hard lead-car acceleration scenarios.}
-\end{figure}
-
-\section{Driving Styles}
-
-I also made three different driving styles: \textbf{aggressive}, \textbf{safe}, and \textbf{smooth}. The simulator stays the same, but the controller cares about different things depending on the selected style.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{p{0.17\textwidth}p{0.23\textwidth}p{0.25\textwidth}p{0.25\textwidth}}
-\toprule
-Style & Main priority & Expected behaviour & How I changed it \\
-\midrule
-Aggressive &
-Tight tracking &
-Closes the gap faster and reacts more strongly &
-Higher tracking emphasis and lower relative comfort penalty \\
-Safe &
-More distance from the lead car &
-Brakes earlier and avoids close gaps more strongly &
-Higher close-distance penalty and optionally a larger desired gap \\
-Smooth &
-Passenger comfort &
-Changes acceleration more gradually &
-Higher jerk and acceleration penalties \\
-\bottomrule
-\end{tabular}
-\caption{The three driving styles and what each one prioritizes.}
-\label{tab:driving_styles}
-\end{table}
-
-The aggressive style cares more about quickly closing the gap and staying near the desired following distance, so it is more willing to use stronger acceleration or braking. The safe style cares more about avoiding close distances, so it reacts more strongly when the ego car gets too close and is more willing to stay farther behind. The smooth style puts more weight on jerk and sudden acceleration changes, so it reacts more gradually even if that causes slightly more tracking error.
-
-I made these styles by changing the weights for tracking error, close-distance safety, jerk, and acceleration. So they are not completely different algorithms. They are just different versions of the same controller objective. This is similar to personalized ACC research, where different cost functions are used to represent different driver preferences \cite{ozkan2021personalized}.
-
-A general version of the style reward can be written as:
-
-\[
-r_t^{(s)}
-=
--w_e^{(s)}|e_{d,t}|
--P_{\mathrm{close}}^{(s)}(d_t)
--P_{\mathrm{far}}^{(s)}(d_t)
--w_j^{(s)}|j_t|
--w_a^{(s)}a_t^2
--C_{\mathrm{collision}}\mathbf{1}[\mathrm{collision}]
-\]
-
-where $s$ is the selected style. The important part is that the simulator does not change. Only the priorities change.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-Style & Desired gap (m) & Jerk weight & Effort weight & Close-dist weight \\
-\midrule
-General (Run 4) & 20 & 0.05 & 0.02 & 3.0 \\
-Aggressive      & 12 & 0.01 & 0.005 & 4.0 \\
-Safe            & 28 & 0.05 & 0.02 & 5.0 \\
-Smooth          & 20 & 0.25 & 0.10 & 3.0 \\
-\bottomrule
-\end{tabular}
-\caption{Key reward weights for each driving style. All styles use the same proximity ramp and too-far nudge from reward v4.}
-\label{tab:style_weights}
-\end{table}
-
-\subsection*{Style Results}
-
-Each style was trained with a 5-seed sweep (3M steps, randomized scenario) and evaluated on the hard scenario. The best non-crashing seed was selected per style.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lrrrrr}
-\toprule
-Style & Best seed & MAE (m) & Mean dist (m) & Min dist (m) & Mean jerk (m/s$^3$) \\
-\midrule
-General (Run 4, baseline) & 4 & \textbf{1.024} & 19.29 & 19.29 & 1.179 \\
-Aggressive & 3 & 2.968 & 12.40 & 1.80  & 1.246 \\
-Safe       & 3 & 2.479 & 24.47 & 16.82 & 1.104 \\
-Smooth     & 2 & 4.897 & 23.90 & 14.89 & \textbf{0.874} \\
-\bottomrule
-\end{tabular}
-\caption{Best-seed results per driving style, evaluated on the hard scenario. MAE is measured relative to each style's own desired gap.}
-\label{tab:style_results}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lrr}
-\toprule
-Style & Crashes (5 seeds) & Converged seeds \\
-\midrule
-General & 1/5 & 3/5 \\
-Aggressive & 4/5 & 1/5 \\
-Safe       & 1/5 & 4/5 \\
-Smooth     & 3/5 & 2/5 \\
-\bottomrule
-\end{tabular}
-\caption{Seed convergence across driving styles. Aggressive is the hardest to train because the tighter desired gap puts the agent closer to the collision boundary.}
-\label{tab:style_convergence}
-\end{table}
-
-The results match intuition. Aggressive achieved the tightest mean following distance (12.40 m, near its 12 m target) but crashed 4/5 seeds — training close to the collision boundary makes the safety constraint harder to satisfy. Safe had the best crash rate (1/5) and consistently maintained a larger buffer. Smooth had the lowest jerk of any style (0.874 m/s$^3$) at the cost of higher tracking error, which makes sense since it is penalising rapid acceleration changes.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{style_metrics_bar.png}
-    \caption{Per-style metric comparison on the hard scenario (best seed per style). MAE is relative to each style's own desired gap. Aggressive has the highest crash rate; smooth has the lowest jerk; safe maintains the largest safety buffer.}
-    \label{fig:style_metrics_bar}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{style_comparison.png}
-    \caption{Following distance, acceleration, and jerk for each driving style on the hard scenario. Dotted reference lines show each style's desired gap. Aggressive tracks a tighter gap with sharper inputs; safe stays well back; smooth produces the gentlest acceleration profile.}
-    \label{fig:style_comparison}
 \end{figure}
 
 \subsection*{Training, Validation, and Evaluation Split}
@@ -607,6 +488,125 @@ Since Run 3 only had 2/5 successful seeds, I tried using SB3's \texttt{VecNormal
 This did not help. When I normalised both observations and rewards, 4/5 seeds crashed because the safety penalties became weaker. When I normalised observations only, the results were still worse than Run 3, and one repeat attempt crashed 5/5 seeds.
 
 In the end, I concluded that \texttt{VecNormalize} was solving the wrong problem. The reward penalties were already carefully scaled, especially the close-distance safety penalty. The instability seemed more related to random seed and policy initialization, so I went back to the normal environment.
+\section{Driving Styles}
+
+Once I had a final reward function that could actually learn stable ACC behaviour, I wanted to see whether I could use the same setup to create different driving styles. I made three versions: aggressive, safe, and smooth. The simulator, observation space, and action space stayed the same. The main difference was how I weighted tracking, safety, acceleration, and jerk.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.17\textwidth}p{0.23\textwidth}p{0.25\textwidth}p{0.25\textwidth}}
+\toprule
+Style & Main priority & Expected behaviour & How I changed it \\
+\midrule
+Aggressive &
+Tight tracking &
+Closes the gap faster and reacts more strongly &
+Higher tracking emphasis and lower relative comfort penalty \\
+Safe &
+More distance from the lead car &
+Brakes earlier and avoids close gaps more strongly &
+Higher close-distance penalty and optionally a larger desired gap \\
+Smooth &
+Passenger comfort &
+Changes acceleration more gradually &
+Higher jerk and acceleration penalties \\
+\bottomrule
+\end{tabular}
+\caption{The three driving styles and what each one prioritizes.}
+\label{tab:driving_styles}
+\end{table}
+
+The aggressive style cares more about quickly closing the gap and staying near the desired following distance, so it is more willing to use stronger acceleration or braking. The safe style cares more about avoiding close distances, so it reacts more strongly when the ego car gets too close and is more willing to stay farther behind. The smooth style puts more weight on jerk and sudden acceleration changes, so it reacts more gradually even if that causes slightly more tracking error.
+
+I made these styles by changing the weights for tracking error, close-distance safety, jerk, and acceleration. So they are not completely different algorithms. They are just different versions of the same controller objective. This is similar to personalized ACC research, where different cost functions are used to represent different driver preferences \cite{ozkan2021personalized}.
+
+A general version of the style reward can be written as:
+
+\[
+r_t^{(s)}
+=
+-w_e^{(s)}|e_{d,t}|
+-P_{\mathrm{close}}^{(s)}(d_t)
+-P_{\mathrm{far}}^{(s)}(d_t)
+-w_j^{(s)}|j_t|
+-w_a^{(s)}a_t^2
+-C_{\mathrm{collision}}\mathbf{1}[\mathrm{collision}]
+\]
+
+where $s$ is the selected style. The important part is that the simulator does not change. Only the priorities change.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Style & Desired gap (m) & Jerk weight & Effort weight & Close-dist weight \\
+\midrule
+General (Run 4) & 20 & 0.05 & 0.02 & 3.0 \\
+Aggressive      & 12 & 0.01 & 0.005 & 4.0 \\
+Safe            & 28 & 0.05 & 0.02 & 5.0 \\
+Smooth          & 20 & 0.25 & 0.10 & 3.0 \\
+\bottomrule
+\end{tabular}
+\caption{Key reward weights for each driving style. All styles use the same proximity ramp and too-far nudge from reward v4.}
+\label{tab:style_weights}
+\end{table}
+
+\subsection*{Style Results}
+
+Each style was trained with a 5-seed sweep (3M steps, randomized scenario) and evaluated on the hard scenario. The best non-crashing seed was selected per style.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Style & Best seed & MAE (m) & Mean dist (m) & Min dist (m) & Mean jerk (m/s$^3$) \\
+\midrule
+General (Run 4, baseline) & 4 & \textbf{1.024} & 19.29 & 19.29 & 1.179 \\
+Aggressive & 3 & 2.968 & 12.40 & 1.80  & 1.246 \\
+Safe       & 3 & 2.479 & 24.47 & 16.82 & 1.104 \\
+Smooth     & 2 & 4.897 & 23.90 & 14.89 & \textbf{0.874} \\
+\bottomrule
+\end{tabular}
+\caption{Best-seed results per driving style, evaluated on the hard scenario. MAE is measured relative to each style's own desired gap.}
+\label{tab:style_results}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Style & Crashes (5 seeds) & Converged seeds \\
+\midrule
+General & 1/5 & 3/5 \\
+Aggressive & 4/5 & 1/5 \\
+Safe       & 1/5 & 4/5 \\
+Smooth     & 3/5 & 2/5 \\
+\bottomrule
+\end{tabular}
+\caption{Seed convergence across driving styles. Aggressive is the hardest to train because the tighter desired gap puts the agent closer to the collision boundary.}
+\label{tab:style_convergence}
+\end{table}
+
+The results match intuition. Aggressive achieved the tightest mean following distance (12.40 m, near its 12 m target) but crashed 4/5 seeds — training close to the collision boundary makes the safety constraint harder to satisfy. Safe had the best crash rate (1/5) and consistently maintained a larger buffer. Smooth had the lowest jerk of any style (0.874 m/s$^3$) at the cost of higher tracking error, which makes sense since it is penalising rapid acceleration changes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{style_metrics_bar.png}
+    \caption{Per-style metric comparison on the hard scenario (best seed per style). MAE is relative to each style's own desired gap. Aggressive has the highest crash rate; smooth has the lowest jerk; safe maintains the largest safety buffer.}
+    \label{fig:style_metrics_bar}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{style_comparison.png}
+    \caption{Following distance, acceleration, and jerk for each driving style on the hard scenario. Dotted reference lines show each style's desired gap. Aggressive tracks a tighter gap with sharper inputs; safe stays well back; smooth produces the gentlest acceleration profile.}
+    \label{fig:style_comparison}
+\end{figure}
+
 \section{Experimental Results}
 
 \subsection*{Training Progression}
