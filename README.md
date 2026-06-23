@@ -4,9 +4,9 @@ after getting rear-ended, i was curious abt how adaptive cruise control actually
 
 **final results:** PID achieved **0.927 m** mean tracking error and the best PPO policy achieved **1.024 m**.
 
-put together a full report documenting everything I tried, built, and learned
-i always learn best by writing things down, so i put together this report as a way of documenting everything i tried, built and learned!
-**[read it here :)](RL_vs_PID_for_Adaptive_Cruise_Control.pdf)**
+iput together a full report documenting everything I tried, built, and learned
+i always learn best by writing things down, so i put together this report as a way of documenting everything i tried, built and learned.
+**[read it here !! :)](RL_vs_PID_for_Adaptive_Cruise_Control.pdf)**
 
 ## Video Demos
 - [PID Demo](final/videos/demo_PID.mp4)
